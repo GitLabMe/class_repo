@@ -1,0 +1,22 @@
+
+---
+ - name: ensures the latest version of apache is installed
+   ansible.builtin.dnf:
+                     name: "{{ web_pkg }}"
+                     state: latest
+
+ - name: add maessage to the index.html file
+   ansible.builtin.template:
+                       src: index.html.j2
+                       dest: "{{ web_root }}/index.html"
+                       mode: "0644"
+   notify: restart_apache
+   when: (ansible_os_family != "RedHat" and ansible_facts['default_ipv4']['address'] == "192.168.12.153")
+
+ - name: ensure {{ web_svc }} is running and enabled
+   ansible.builtin.service:
+                       name: "{{ web_svc }}"
+                       state: started
+                       enabled: true
+
+...

@@ -1,0 +1,25 @@
+---
+- name: setup customs facts
+  hosts: controlnode
+  become: true
+  vars: 
+    - facts_dir: /etc/ansible/facts.d
+    - custom_file: custom.fact  
+  tasks:
+      
+     - name:  create the facts directory
+       ansible.builtin.file: 
+                        path: "{{ facts_dir }}"
+                        state: directory
+                        recurse: yes
+
+
+     - name: install the facts
+       ansible.builtin.copy:
+                      src: "{{ custom_file }}"
+                      dest: "{{ facts_dir  }}" 
+     - name: display the custom variable
+       ansible.builtin.debug:
+                       msg: "{{ ansible_local.custom }}"
+                              
+...

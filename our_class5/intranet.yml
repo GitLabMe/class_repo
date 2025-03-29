@@ -1,0 +1,52 @@
+---
+- name: enable intanet services
+  hosts: node1
+  become: true
+  tasks: 
+    
+      - name: ensure httpd and firewalld are updated
+        ansible.builtin.dnf: 
+                        name: 
+                          - httpd
+                          - firewalld 
+                        state: latest
+      - name: add content to index file
+        ansible.builtin.copy:
+                       content: "welcome to the example.com intranet!" 
+                       dest: /var/www/html/index.html
+              
+
+      - name: firewalld enable and running
+        ansible.builtin.service: 
+             name: firewalld
+             enabled: true 
+             state: started
+      - name: firewalld permits access to httpd service
+        ansible.posix.firewalld: 
+               service: http 
+               permanent: true
+               state: enabled
+               immediate: yes 
+      
+      - name: httpd enabled and running 
+        ansible.builtin.service:
+             name: httpd
+             enabled: true
+             state: started 
+
+- name: test the intranet 
+  hosts: controlnode
+  become: no 
+  tasks:
+     
+    - name: connect to intranet web server
+      ansible.builtin.uri:
+          url: http://node1
+          return_content: yes
+          status_code: 200 
+
+
+
+
+
+            

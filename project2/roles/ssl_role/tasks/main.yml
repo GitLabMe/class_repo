@@ -1,0 +1,5 @@
+ - name: ensures the latest version of {{ ssl_pkg }} is installed
+   ansible.builtin.dnf:
+                     name: "{{ ssl_pkg }}"
+                     state: latest
+

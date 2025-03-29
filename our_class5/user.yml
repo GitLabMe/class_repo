@@ -1,0 +1,11 @@
+---
+- name: create new user in all hosts
+  hosts: all
+  become: true
+  tasks: 
+     
+
+      - name: create user devops
+        ansible.builtin.user: 
+                         name: devops
+                         state: present  

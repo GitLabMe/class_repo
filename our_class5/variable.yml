@@ -1,0 +1,56 @@
+---
+- name: install apache web server and opens the ports
+  hosts: node4
+  become: yes
+  vars:
+    - web_pkg: httpd
+    - firewall_pkg: firewalld
+    - web_service: httpd
+    - firewall_service: firewalld
+    - python_pkg: python3-PyMySQL
+    - rule: http
+  tasks:
+
+     - name: install the lastest of all packages
+       ansible.builtin.dnf:
+                   name:
+                     - "{{ web_pkg }}"
+                     - "{{ firewall_pkg }}"
+                     - "{{ python_pkg }}"
+                   state: latest  
+
+     - name: make sure {{ web_service }} is started and up on boot
+       ansible.builtin.service:
+                      name: "{{ web_service }}"
+                      state: started
+                      enabled: yes  
+
+     - name: ensure {{ firewall_service }} is started and up on boot
+       ansible.builtin.service: 
+                      name: "{{ firewall_service }}"
+                      state: started       
+                      enabled: yes
+
+     - name: add a content to the index file
+       ansible.builtin.copy:
+                      content: " example web content \n\n " 
+                      dest: /var/www/html/index.html
+
+     - name: ensure firewall port is opened for {{ rule }}
+       ansible.posix.firewalld:
+                  service: "{{ rule }}"
+                  permanent: yes
+                  immediate: yes
+                  state: enabled
+
+- name: ensure access to the web service
+  hosts: controlnode
+  become: false
+  tasks:
+     
+    - name: ensure the web service is reachable
+      ansible.builtin.uri:
+                 url: http://node4
+                 return_content: yes
+                 status_code: 200 
+

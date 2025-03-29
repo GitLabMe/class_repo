@@ -1,0 +1,32 @@
+---
+- name: collect systems activities for better monitoring 
+  hosts: all
+  become: true
+  vars:
+    - monitor_pkg: sysstat 
+    - monitor_svc: sysstat.service 
+  tasks: 
+
+
+        - name: install {{ monitor_pkg }} tools
+          ansible.builtin.dnf:
+                      name: "{{ monitor_pkg  }}"
+                      state: latest
+        - name: start and enabled {{ monitor_svc }}
+          ansible.builtin.service:
+                         name: "{{ monitor_svc }}"
+                         state: started
+                         enabled: true
+
+        - name: enabled the system activity collector
+          ansible.builtin.lineinfile:
+                         path: /etc/sysconfig/sysstat
+                         regexp: '^HISTORY'
+                         line: HISTORY=30  
+          register: change
+           
+        - name: restart and enabled {{ monitor_svc }}
+          ansible.builtin.service:
+                         name: "{{ monitor_svc }}"
+                         state: restarted
+          when: change.changed

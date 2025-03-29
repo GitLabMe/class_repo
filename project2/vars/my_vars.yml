@@ -1,0 +1,9 @@
+# these are my variables ##
+
+firewall_pkg: firewalld
+firewall_svc: firewalld
+web_pkg: httpd
+web_svc: httpd
+ssl_pkg: mod_ssl
+web_root: /var/www/html
+app_service: http  

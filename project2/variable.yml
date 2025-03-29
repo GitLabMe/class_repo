@@ -1,0 +1,58 @@
+---
+- name: automate the setup of a web server environment
+  hosts: node2
+  become: true
+  vars: 
+    - firewall_pkg: firewalld
+    - firewall_svc: firewalld
+    - web_pkg: httpd
+    - web_svc: httpd
+    - ssl_pkg: mod_ssl
+    - web_root: /var/www/html 
+  tasks:
+
+     - name: ensures the latest version of all packages are installed
+       ansible.builtin.dnf: 
+                     name: 
+                        - "{{ firewall_pkg }}"
+                        - "{{ web_pkg }}"
+                        - "{{ ssl_pkg }}"
+                     state: latest
+
+     - name: add maessage to the index.html file
+       ansible.builtin.template:
+                       src: index.html.j2 
+                       dest: "{{ web_root }}/index.html"
+                       mode: "0644" 
+     - name: ensure {{ firewall_svc }} is running
+       ansible.builtin.service:
+                       name: "{{ firewall_svc }}" 
+                       state: started
+                       enabled: true
+     - name: ensure {{ firewall_svc }} allows access to {{ web_svc }} 
+       ansible.posix.firewalld:
+                        service: http
+                        permanent: yes
+                        state: enabled       
+                        immediate: yes
+     - name: ensure {{ web_svc }} is running and enabled
+       ansible.builtin.service:
+                       name: "{{ web_svc }}"
+                       state: started
+                       enabled: true
+
+- name: test access to the web server
+  hosts: controlnode
+  tasks:
+    
+    - name: test on the webpage
+      ansible.builtin.uri:
+                  url: http://node2
+                  return_content: yes
+                  status_code: 200
+      register: content_result
+
+    - name: print the content returned
+      ansible.builtin.debug:
+                        var: content_result      
+...

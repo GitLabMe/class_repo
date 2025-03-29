@@ -1,0 +1,28 @@
+---
+- hosts: "{{ node }}"
+  become: true
+  vars: 
+    - node: node1  
+  vars_files: vars/my_vars.yml  
+  roles:
+    - apache_role
+    - firewall_role
+    - ssl_role
+- name: test access to the web server
+  hosts: controlnode
+  vars:
+    - node: node1
+  tasks:
+
+    - name: test on the webpage
+      ansible.builtin.uri:
+                  url: http://{{ node }}
+                  return_content: yes
+                  status_code: 200
+      register: content_result
+
+    - name: print the content returned
+      ansible.builtin.debug:
+                        var: content_result
+...
+                

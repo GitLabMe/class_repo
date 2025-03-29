@@ -1,0 +1,13 @@
+---
+- name: user's sensitive data 
+  hosts: all
+  become: true
+  vars_files: 
+      - secretinfo.yml
+  tasks: 
+    
+     - name: creating user account in all managed nodes
+       ansible.builtin.user:
+                   name: "{{ username }}"
+                   password: "{{ passhash }}"
+                   state: present   
