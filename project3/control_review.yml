@@ -1,0 +1,94 @@
+---
+- name: test for server requirement
+  hosts: node1
+  become: true
+  vars_files: 
+        - vars.yml
+  tasks: 
+        
+     - name: test node1 for requirement 
+       ansible.builtin.fail:
+                msg: “The {{ inventory_hostname }} did not meet minimum reqs.”
+       when: (ansible_facts['distribution'] != "RedHat" and min_ram_mb != "256")
+    
+     - name: ensures the latest version of all packages are installed
+       ansible.builtin.dnf:
+                     name:
+                        - "{{ fw_package }}"
+                        - "{{ web_package }}"
+                        - "{{ ssl_package }}"
+                     state: latest
+     - name: add maessage to the index.html file
+       ansible.builtin.copy:
+                   content: ' This is a new website from {{ ansible_hostname }} ' 
+                   dest: index.html
+
+     - name: ensure {{ fw_service }} allows access to services
+       ansible.posix.firewalld:
+                        service: "{{ item }}"
+                        permanent: yes
+                        state: enabled
+                        immediate: yes
+       loop: 
+         - http
+         - https         
+
+     - name: ensure all services are running and enabled
+       ansible.builtin.service:
+                       name: "{{ item }}"
+                       state: started
+                       enabled: true
+       loop:
+         - "{{ fw_service }}"
+         - "{{ web_service }}"       
+                           
+     - name: add port 83 to selinux
+       ansible.builtin.command: semanage port -a -t http_port_t -p tcp 83
+       when: changed.changed
+ 
+     - name: change web_service default port
+       ansible.builtin.copy:
+                 src: apache.cfg
+                 dest: /etc/httpd/conf/httpd.conf
+       tags: configuration            
+       notify:
+          - restart_apache_service
+
+     - name: permit traffic in default zone on port 83/tcp
+       ansible.posix.firewalld:
+                port: 83/tcp
+                permanent: yes
+                state: enabled
+
+        
+     - block:   
+         - name: Copy server.crt and server.key to /etc/httpd/conf.d/ssl 
+           ansible.builtin.copy: 
+                  src: "{{ item }}"
+                  dest: /etc/httpd/conf.d/ssl  
+           loop: 
+             - server.crt
+             - server.key   
+       rescue:
+          - name: in case those file above does not exit 
+            ansible.builtin.debug: 
+                      msg: " One or more of the configuration changes failed, but the web is still active "
+       always:
+          - name: Remove the mod_ssl package
+            ansible.builtin.dnf: 
+                 name: "{{ ssl_package }}"
+                 state: absent  
+
+
+     - name: Copy index.html to /var/www/html
+       ansible.builtin.copy:
+                  src: index.html
+                  dest: /var/www/html
+      
+    
+  handlers:
+     - name: restart_apache_service   
+       ansible.builtin.service: 
+                           name: "{{ web_service }}"
+                           state: restarted
+

@@ -1,2 +1,9 @@
+controlnode
+[internetweb]
+node1
+node2
+[intranetweb]
+node3
+node4
 [webserver]
 node2

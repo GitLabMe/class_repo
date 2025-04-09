@@ -1,0 +1,25 @@
+---
+- name: welcome messages
+  hosts: all
+  become: true
+  tasks:
+      
+
+     - name: welcome message
+       ansible.builtin.copy: 
+                    content: “Welcome to Internetweb server”
+                    dest: /etc/motd
+       when: inventory_hostname in groups['internetweb']
+
+     - name: welcome message
+       ansible.builtin.copy:
+                    content: “Welcome to Intranetweb server”
+                    dest: /etc/motd
+       when: inventory_hostname in groups['intranetweb']
+    
+     - name: welcome message
+       ansible.builtin.copy:
+                    content: “Welcome to ungrouped server”
+                    dest: /etc/motd
+       when: inventory_hostname in groups['ungrouped']
+
